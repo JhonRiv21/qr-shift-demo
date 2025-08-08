@@ -4,8 +4,8 @@
   import { onMount } from 'svelte';
 
   let { data } = $props();
-  let email = 'admin@admin.com';
-  let password = 'A123456*a';
+  let email = $state('admin@admin.com');
+  let password = $state('A123456*a');
   let loggedIn = $state(false);
 
   const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
@@ -75,10 +75,12 @@
     <form class="space-y-4" onsubmit={(e) => { e.preventDefault(); login(); }}>
       <h1 class="text-2xl font-bold">Admin</h1>
       <div class="grid gap-2">
-        <input class="border p-3 rounded" name="email" placeholder="Email" value={email} />
-        <input class="border p-3 rounded" name="password" placeholder="Password" value={password} type="password" />
+        <label for="adm_email" class="text-sm text-slate-600">Email</label>
+        <input id="adm_email" class="border p-3 rounded" name="email" placeholder="Email" bind:value={email} />
+        <label for="adm_pwd" class="text-sm text-slate-600">Contraseña</label>
+        <input id="adm_pwd" class="border p-3 rounded" name="password" placeholder="Password" bind:value={password} type="password" />
       </div>
-      <button class="bg-blue-600 text-white px-4 py-2 rounded">Ingresar</button>
+      <button class="bg-blue-600 text-white px-4 py-2 rounded transition hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-400">Ingresar</button>
     </form>
   {:else}
     <div class="space-y-6">
@@ -96,7 +98,7 @@
       </div>
 
       <h2 class="text-xl font-semibold">Pendientes</h2>
-      <ul class="divide-y rounded border">
+      <ul class="divide-y rounded border bg-white">
         {#each pending as p}
           <li class="p-3 flex justify-between"><span class="font-mono">{p.turno}</span><span>{new Date(p.fecha).toLocaleTimeString()}</span></li>
         {/each}
