@@ -1,18 +1,18 @@
 <script lang="ts">
   import { createClient } from '@supabase/supabase-js';
   import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
-  import { enhance } from '$app/forms';
+  import { onMount } from 'svelte';
 
   let { data } = $props();
   let email = 'admin@admin.com';
   let password = 'A123456*a';
-  let loggedIn = false;
+  let loggedIn = $state(false);
 
   const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 
   // Subscribe for realtime updates
-  let current = data.current;
-  let pending = data.pending ?? [];
+  let current = $state(data.current);
+  let pending = $state(data.pending ?? []);
 
   const channel = supabase
     .channel('turnos-changes')
@@ -31,14 +31,48 @@
     pending = pendingRes.data ?? [];
   }
 
+  onMount(async () => {
+    const { data } = await supabase.auth.getSession();
+    loggedIn = !!data.session;
+  });
+
   $effect(() => () => {
     supabase.removeChannel(channel);
   });
+
+  async function login() {
+    let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      // Intentar registro automático para PoC
+      const su = await supabase.auth.signUp({ email, password });
+      if (su.error && su.error.message && !su.error.message.includes('already registered')) {
+        return;
+      }
+      ({ data, error } = await supabase.auth.signInWithPassword({ email, password }));
+    }
+    loggedIn = !!data.session && !error;
+    if (loggedIn) await refresh();
+  }
+
+  async function logout() {
+    await supabase.auth.signOut();
+    loggedIn = false;
+  }
+
+  async function llamarSiguiente() {
+    const { error } = await supabase.rpc('llamar_siguiente');
+    if (!error) await refresh();
+  }
+
+  async function finalizarActual() {
+    const { error } = await supabase.rpc('finalizar_actual');
+    if (!error) await refresh();
+  }
 </script>
 
 <div class="mx-auto max-w-3xl p-4 space-y-6">
   {#if !loggedIn}
-    <form method="post" use:enhance class="space-y-4" action="?/login" on:submit={() => (loggedIn = true)}>
+    <form class="space-y-4" onsubmit={(e) => { e.preventDefault(); login(); }}>
       <h1 class="text-2xl font-bold">Admin</h1>
       <div class="grid gap-2">
         <input class="border p-3 rounded" name="email" placeholder="Email" value={email} />
@@ -56,12 +90,9 @@
       {/if}
 
       <div class="flex gap-3">
-        <form method="post" use:enhance action="?/llamarSiguiente">
-          <button class="bg-green-600 text-white px-4 py-2 rounded">Llamar siguiente</button>
-        </form>
-        <form method="post" use:enhance action="?/finalizarActual">
-          <button class="bg-red-600 text-white px-4 py-2 rounded">Finalizar actual</button>
-        </form>
+        <button class="bg-green-600 text-white px-4 py-2 rounded" onclick={llamarSiguiente}>Llamar siguiente</button>
+        <button class="bg-red-600 text-white px-4 py-2 rounded" onclick={finalizarActual}>Finalizar actual</button>
+        <button class="ml-auto bg-gray-200 px-4 py-2 rounded" onclick={logout}>Salir</button>
       </div>
 
       <h2 class="text-xl font-semibold">Pendientes</h2>
