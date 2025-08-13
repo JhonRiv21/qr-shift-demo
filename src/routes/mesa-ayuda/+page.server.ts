@@ -1,6 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
 import { supabaseAdmin } from '$lib/utils/supabase.server';
 import { fail } from '@sveltejs/kit';
+import { ticketSchema, validateForm } from '$lib/utils/validation';
 
 export const load: PageServerLoad = async () => {
   try {
@@ -42,18 +43,30 @@ export const actions: Actions = {
         doc_num,
         nombre_cliente,
         telefono,
-        email
+        email,
       });
 
-      if (!sucursal_id) {
-        return fail(400, { message: 'Debe seleccionar una sucursal' });
+      // Validar datos con Zod
+      const formData = {
+        sucursal_id,
+        servicios: servicios_codigos,
+        nombre_cliente,
+        doc_tipo,
+        doc_num,
+        telefono,
+        email,
+      };
+
+      const validation = validateForm(ticketSchema, formData);
+      if (!validation.success) {
+        console.error('Errores de validación:', validation.errors);
+        return fail(400, { 
+          message: 'Datos inválidos', 
+          errors: validation.errors 
+        });
       }
-      if (servicios_codigos.length === 0) {
-        return fail(400, { message: 'Debe seleccionar al menos un servicio' });
-      }
-      if (!doc_tipo || !doc_num) {
-        return fail(400, { message: 'Documento requerido' });
-      }
+
+      console.log('Datos validados correctamente:', validation.data);
 
       const { data, error } = await supabaseAdmin.rpc('turnos_crear_ticket', {
         p_sucursal_id: sucursal_id,

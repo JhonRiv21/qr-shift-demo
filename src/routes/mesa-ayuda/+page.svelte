@@ -3,12 +3,14 @@
   import { toast } from '$lib/stores/toast';
   import { generarPDF } from '$lib/utils/pdf';
   import { ticketSchema, validateForm } from '$lib/utils/validation';
+  import { Input } from '$lib/components/ui/input';
 
+  import * as Select from "$lib/components/ui/select/index";
 
   let { data, form } = $props();
   let sucursal_id = $state('');
   let servicios_seleccionados = $state<string[]>([]);
-  let doc_tipo = $state('Cédula de ciudadanía');
+  let doc_tipo = $state('CC');
   let doc_num = $state('');
   let nombre_cliente = $state('');
   let telefono = $state('');
@@ -16,6 +18,37 @@
   let observaciones = $state('');
   let errors = $state<Record<string, string>>({});
   let loading = $state(false);
+
+  const tiposDocumento = [
+    {
+      value: "CC",
+      label: "Cédula Ciudadanía"
+    },
+    {
+      value: "CD",
+      label: "Carnet Diplómatico"
+    },
+    {
+      value: "CE",
+      label: "Cédula Extranjería"
+    },
+    {
+      value: "NI",
+      label: "NIT"
+    },
+    {
+      value: "PT",
+      label: "Permiso por protección temporal"
+    },
+    {
+      value: "SC",
+      label: "Salvoconducto"
+    },
+    {
+      value: "TI",
+      label: "Tarjeta de identidad"
+    }
+  ];
 
   function toggleServicio(codigo: string) {
     if (servicios_seleccionados.includes(codigo)) {
@@ -28,7 +61,7 @@
   function limpiarFormulario() {
     sucursal_id = '';
     servicios_seleccionados = [];
-    doc_tipo = 'Cédula de ciudadanía';
+    doc_tipo = 'CC';
     doc_num = '';
     nombre_cliente = '';
     telefono = '';
@@ -40,6 +73,13 @@
   function validateFormData() {
     // Limpiar errores previos
     errors = {};
+    
+    // Validación específica para servicios
+    if (servicios_seleccionados.length === 0) {
+      errors.servicios = 'Debe seleccionar al menos un servicio';
+      toast.error('Debe seleccionar al menos un servicio');
+      return false;
+    }
     
     // Preparar datos para validación
     const formData = {
@@ -114,6 +154,7 @@
                 name="sucursal_id"
                 value={sucursal.id}
                 bind:group={sucursal_id}
+                required
                 class="text-blue-600 focus:ring-blue-500"
               />
               <span class="font-medium">{sucursal.nombre}</span>
@@ -147,10 +188,10 @@
             </label>
           {/each}
         </div>
-        <input type="hidden" name="servicios_codigos" value={servicios_seleccionados.join(',')} />
-        {#if getFieldError('servicios')}
-          <p class="mt-2 text-sm text-red-600">{getFieldError('servicios')}</p>
-        {/if}
+                 <input type="hidden" name="servicios_codigos" value={servicios_seleccionados.join(',')} />
+         {#if servicios_seleccionados.length === 0 && errors.servicios}
+           <p class="mt-2 text-sm text-red-600">Debe seleccionar al menos un servicio</p>
+         {/if}
       </div>
 
       <!-- Información del Cliente -->
@@ -158,23 +199,36 @@
         <h2 class="text-xl font-semibold mb-4">Información del Cliente</h2>
         <div class="grid gap-4 md:grid-cols-2">
           <div class="space-y-2">
-            <label for="doc_tipo" class="text-sm font-medium text-slate-700">Tipo de documento</label>
-            <select id="doc_tipo" name="doc_tipo" bind:value={doc_tipo} class="w-full rounded-lg border p-3">
-              <option>Cédula de ciudadanía</option>
-              <option>Tarjeta de identidad</option>
-              <option>Cédula de extranjería</option>
-              <option>Pasaporte</option>
-            </select>
+            <label for="doc_tipo" class="text-sm font-medium text-slate-700">
+              Tipo de documento
+            </label>
+                         <Select.Root bind:value={doc_tipo} type="single">
+               <Select.Trigger class="w-full">
+                 {doc_tipo
+                   ? tiposDocumento.find(t => t.value === doc_tipo)?.label
+                   : "Selecciona un tipo"}
+               </Select.Trigger>
+               <Select.Content>
+                 {#each tiposDocumento as tipo}
+                   <Select.Item value={tipo.value}>{tipo.label}</Select.Item>
+                 {/each}
+               </Select.Content>
+             </Select.Root>
+             <input type="hidden" name="doc_tipo" value={doc_tipo} required />
           </div>
           <div class="space-y-2">
             <label for="doc_num" class="text-sm font-medium text-slate-700">Número de documento</label>
-            <input
+            <Input
               id="doc_num"
               name="doc_num"
               type="text"
               bind:value={doc_num}
               placeholder="Ej: 1234567890"
-              class="w-full rounded-lg border p-3 {getFieldError('doc_num') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}"
+              required
+              maxlength={20}
+              pattern="[0-9]+"
+              title="Solo números permitidos"
+              class={getFieldError('doc_num') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}
             />
             {#if getFieldError('doc_num')}
               <p class="text-sm text-red-600">{getFieldError('doc_num')}</p>
@@ -182,13 +236,17 @@
           </div>
           <div class="space-y-2">
             <label for="nombre_cliente" class="text-sm font-medium text-slate-700">Nombre completo</label>
-            <input
+            <Input
               id="nombre_cliente"
               name="nombre_cliente"
               type="text"
               bind:value={nombre_cliente}
               placeholder="Nombre del cliente"
-              class="w-full rounded-lg border p-3 {getFieldError('nombre_cliente') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}"
+              required
+              maxlength={100}
+              pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+"
+              title="Solo letras y espacios permitidos"
+              class={getFieldError('nombre_cliente') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}
             />
             {#if getFieldError('nombre_cliente')}
               <p class="text-sm text-red-600">{getFieldError('nombre_cliente')}</p>
@@ -196,50 +254,42 @@
           </div>
           <div class="space-y-2">
             <label for="telefono" class="text-sm font-medium text-slate-700">Teléfono</label>
-            <input
+            <Input
               id="telefono"
               name="telefono"
               type="tel"
               bind:value={telefono}
               placeholder="Ej: 3001234567"
-              class="w-full rounded-lg border p-3 {getFieldError('telefono') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}"
+              required
+              maxlength={15}
+              pattern="[0-9]+"
+              title="Solo números permitidos"
+              class={getFieldError('telefono') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}
             />
             {#if getFieldError('telefono')}
               <p class="text-sm text-red-600">{getFieldError('telefono')}</p>
             {/if}
           </div>
           <div class="space-y-2 md:col-span-2">
-            <label for="email" class="text-sm font-medium text-slate-700">Email (opcional)</label>
-            <input
+            <label for="email" class="text-sm font-medium text-slate-700">Email</label>
+            <Input
               id="email"
               name="email"
               type="email"
               bind:value={email}
               placeholder="cliente@ejemplo.com"
-              class="w-full rounded-lg border p-3 {getFieldError('email') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}"
+              maxlength={254}
+              required
+              class={getFieldError('email') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}
             />
             {#if getFieldError('email')}
               <p class="text-sm text-red-600">{getFieldError('email')}</p>
             {/if}
           </div>
-          <div class="space-y-2 md:col-span-2">
-            <label for="observaciones" class="text-sm font-medium text-slate-700">Observaciones (opcional)</label>
-            <textarea
-              id="observaciones"
-              name="observaciones"
-              bind:value={observaciones}
-              placeholder="Observaciones adicionales..."
-              rows="3"
-              class="w-full rounded-lg border p-3 {getFieldError('observaciones') ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}"
-            ></textarea>
-            {#if getFieldError('observaciones')}
-              <p class="text-sm text-red-600">{getFieldError('observaciones')}</p>
-            {/if}
-          </div>
         </div>
       </div>
 
-            <!-- Botones -->
+      <!-- Botones -->
       <div class="flex gap-3 justify-center">
         <button
           type="button"
@@ -278,7 +328,7 @@
         
         <div class="flex items-center justify-center gap-3">
           <button
-            onclick={limpiarFormulario}
+            onclick={() => window.location.reload()}
             class="px-6 py-3 rounded-lg border text-slate-700 hover:bg-slate-50 transition"
           >
             Crear otro ticket

@@ -19,33 +19,27 @@ export const ticketSchema = z.object({
     .min(1, 'Debe seleccionar al menos un servicio'),
   nombre_cliente: z.string()
     .min(1, 'Nombre del cliente es requerido')
-    .max(100, 'Nombre demasiado largo'),
-  doc_tipo: z.enum(['Cédula de ciudadanía', 'Tarjeta de identidad', 'Cédula de extranjería', 'Pasaporte'], {
-    errorMap: () => ({ message: 'Tipo de documento inválido' })
-  }),
+    .max(100, 'Nombre demasiado largo')
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El nombre solo puede contener letras y espacios'),
+  doc_tipo: z.enum(['CC', 'CD', 'CE', 'NI', 'PT', 'SC', 'TI']),
   doc_num: z.string()
     .min(1, 'Número de documento es requerido')
-    .max(20, 'Número de documento demasiado largo'),
+    .max(20, 'Número de documento demasiado largo')
+    .regex(/^[0-9]+$/, 'El número de documento solo puede contener números'),
   telefono: z.string()
     .min(1, 'Teléfono es requerido')
-    .max(15, 'Teléfono demasiado largo'),
+    .max(15, 'Teléfono demasiado largo')
+    .regex(/^[0-9]+$/, 'El teléfono solo puede contener números'),
   email: z.string()
     .email('Email inválido')
-    .optional()
-    .or(z.literal('')),
-  observaciones: z.string()
-    .max(500, 'Observaciones demasiado largas')
-    .optional()
-    .or(z.literal(''))
+    .min(1, 'Email es requerido')
 });
 
 // Esquema para actualizar servicio
 export const servicioUpdateSchema = z.object({
   ticket_servicio_id: z.string()
     .uuid('ID de servicio inválido'),
-  estado: z.enum(['pendiente', 'en_proceso', 'completado', 'cancelado'], {
-    errorMap: () => ({ message: 'Estado inválido' })
-  })
+  estado: z.enum(['pendiente', 'en_proceso', 'completado', 'cancelado'])
 });
 
 // Tipos derivados de los esquemas
@@ -54,14 +48,15 @@ export type TicketForm = z.infer<typeof ticketSchema>;
 export type ServicioUpdateForm = z.infer<typeof servicioUpdateSchema>;
 
 // Función helper para validar y obtener errores
-export function validateForm<T>(schema: z.ZodSchema<T>, data: any): { success: true; data: T } | { success: false; errors: Record<string, string> } {
+export function validateForm<T>(schema: z.ZodSchema<T>, data: unknown): { success: true; data: T } | { success: false; errors: Record<string, string> } {
   try {
     const validatedData = schema.parse(data);
     return { success: true, data: validatedData };
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errors: Record<string, string> = {};
-      error.errors.forEach(err => {
+      // @ts-ignore - ZodError has errors property
+      error.errors.forEach((err: any) => {
         const field = err.path.join('.');
         errors[field] = err.message;
       });
