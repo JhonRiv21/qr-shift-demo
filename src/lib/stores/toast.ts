@@ -1,38 +1,46 @@
 import { writable } from 'svelte/store';
 
-export type ToastKind = 'success' | 'error' | 'info';
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
-export type ToastItem = {
-  id: number;
+export interface Toast {
+  id: string;
+  type: ToastType;
   message: string;
-  kind: ToastKind;
-};
+  duration?: number;
+}
 
 function createToastStore() {
-  const { subscribe, update } = writable<ToastItem[]>([]);
-  let idCounter = 1;
-  const recent = new Map<string, number>();
+  const { subscribe, update } = writable<Toast[]>([]);
 
-  function push(message: string, kind: ToastKind = 'info', ttlMs = 3500) {
-    const now = Date.now();
-    const last = recent.get(message) ?? 0;
-    if (now - last < 1500) return; // anti-spam básico por mensaje
-    recent.set(message, now);
+  function addToast(type: ToastType, message: string, duration = 4000) {
+    const id = Math.random().toString(36).substr(2, 9);
+    const toast: Toast = { id, type, message, duration };
+    
+    update(toasts => [...toasts, toast]);
 
-    const id = idCounter++;
-    const item: ToastItem = { id, message, kind };
-    update((arr) => [...arr, item]);
-    setTimeout(() => {
-      update((arr) => arr.filter((t) => t.id !== id));
-    }, ttlMs);
+    if (duration > 0) {
+      setTimeout(() => {
+        removeToast(id);
+      }, duration);
+    }
+  }
+
+  function removeToast(id: string) {
+    update(toasts => toasts.filter(t => t.id !== id));
+  }
+
+  function clearToasts() {
+    update(() => []);
   }
 
   return {
     subscribe,
-    push,
-    success: (msg: string) => push(msg, 'success'),
-    error: (msg: string) => push(msg, 'error'),
-    info: (msg: string) => push(msg, 'info')
+    success: (message: string, duration?: number) => addToast('success', message, duration),
+    error: (message: string, duration?: number) => addToast('error', message, duration),
+    warning: (message: string, duration?: number) => addToast('warning', message, duration),
+    info: (message: string, duration?: number) => addToast('info', message, duration),
+    remove: removeToast,
+    clear: clearToasts
   };
 }
 

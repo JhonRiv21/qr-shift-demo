@@ -15,8 +15,9 @@
     <a href="/" class="font-semibold">Turnos</a>
     <nav class="ml-auto flex items-center gap-3 text-sm">
       <a class="hover:underline" href="/">Home</a>
+      <a class="hover:underline" href="/mesa-ayuda">Mesa de Ayuda</a>
+      <a class="hover:underline" href="/login">Panel de Gestión</a>
       <a class="hover:underline" href="/pantalla">Pantalla</a>
-      <a class="hover:underline" href="/admin">Admin</a>
     </nav>
   </div>
 </header>
