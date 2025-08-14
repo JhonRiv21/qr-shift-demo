@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
   import { createClient } from '@supabase/supabase-js';
   import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 
@@ -67,10 +67,6 @@
 
     <div class="mt-16 text-center">
       <div class="text-5xl font-bold text-green-400">Siguiente: {next ? next.turno : '--'}</div>
-      {#if next?.turnos_sucursales}
-        <div class="text-gray-500 mt-1">{next.turnos_sucursales.nombre}</div>
-      {/if}
     </div>
   </div>
-</div>
-
+</div> -->

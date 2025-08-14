@@ -113,11 +113,6 @@
           {/if}
         </Button>
 
-        <div class="text-center">
-          <p class="text-xs text-muted-foreground">
-            Credenciales por defecto: admin@admin.com / A123456*a
-          </p>
-        </div>
       </form>
     </CardContent>
   </Card>

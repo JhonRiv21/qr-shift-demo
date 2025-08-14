@@ -9,7 +9,7 @@
     <p class="text-muted-foreground mt-2">Gestión integral de tickets con múltiples servicios</p>
   </div>
 
-  <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+  <div class="grid gap-6 grid-cols-1 md:grid-cols-2">
     <!-- Mesa de Ayuda -->
     <Card class="hover:shadow-lg transition-shadow duration-300">
       <CardHeader>
@@ -67,7 +67,7 @@
     </Card>
 
     <!-- Pantalla -->
-    <Card class="hover:shadow-lg transition-shadow duration-300">
+    <!-- <Card class="hover:shadow-lg transition-shadow duration-300">
       <CardHeader>
         <div class="flex items-center space-x-4">
           <div class="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -92,6 +92,6 @@
           </Button>
         </a>
       </CardContent>
-    </Card>
+    </Card> -->
   </div>
 </div>

@@ -55,7 +55,7 @@ export function validateForm<T>(schema: z.ZodSchema<T>, data: unknown): { succes
   } catch (error) {
     if (error instanceof z.ZodError) {
       const errors: Record<string, string> = {};
-      // @ts-ignore - ZodError has errors property
+      // @ts-expect-error - ZodError has errors property
       error.errors.forEach((err: any) => {
         const field = err.path.join('.');
         errors[field] = err.message;

@@ -11,13 +11,13 @@
 </svelte:head>
 
 <header class="sticky top-0 z-40 backdrop-blur bg-[#fefefe] border-b">
-  <div class="mx-auto max-w-6xl px-4 h-14 flex items-center gap-4">
+  <div class="mx-auto max-w-6xl px-4 h-14 flex items-center gap-5">
     <a href="/" class="font-semibold">Turnos</a>
-    <nav class="ml-auto flex items-center gap-3 text-sm">
-      <a class="hover:underline" href="/">Home</a>
-      <a class="hover:underline" href="/mesa-ayuda">Mesa de Ayuda</a>
-      <a class="hover:underline" href="/login">Panel de Gestión</a>
-      <a class="hover:underline" href="/pantalla">Pantalla</a>
+    <nav class="ml-auto flex items-center gap-4 sm:gap-10 text-sm">
+      <a class="hover:underline max-w-max" href="/">Inicio</a>
+      <a class="hover:underline max-w-max" href="/mesa-ayuda">Mesa de Ayuda</a>
+      <a class="hover:underline max-w-max" href="/login">Panel de Gestión</a>
+      <!-- <a class="hover:underline" href="/pantalla">Pantalla</a> -->
     </nav>
   </div>
 </header>

@@ -4,6 +4,8 @@
   import { generarPDF } from '$lib/utils/pdf';
   import { ticketSchema, validateForm } from '$lib/utils/validation';
   import { Input } from '$lib/components/ui/input';
+  import { Button } from '$lib/components/ui/button';
+  import { Loader2 } from 'lucide-svelte';
 
   import * as Select from "$lib/components/ui/select/index";
 
@@ -290,29 +292,27 @@
       </div>
 
       <!-- Botones -->
-      <div class="flex gap-3 justify-center">
-        <button
-          type="button"
-          onclick={limpiarFormulario}
-          class="px-6 py-3 rounded-lg border text-slate-700 hover:bg-slate-50 transition"
-        >
-          Limpiar
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          class="px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-        >
-          {#if loading}
-            <svg class="animate-spin -ml-1 mr-3 h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Creando ticket...
-          {:else}
-            Crear Ticket
-          {/if}
-        </button>
+      <div class="flex flex-row flex-wrap gap-4 justify-center sm:justify-end">
+         <Button
+           type="button"
+           class="h-10 px-14"
+           variant="outline"
+           onclick={limpiarFormulario}
+         >
+           Limpiar
+         </Button>
+         <Button
+           type="submit"
+           class="h-10 px-14"
+           disabled={loading}
+         >
+           {#if loading}
+             <Loader2 class="animate-spin" />
+             Creando ticket...
+           {:else}
+             Crear Ticket
+           {/if}
+         </Button>
       </div>
     </form>
   {:else}
@@ -327,19 +327,19 @@
         </div>
         
         <div class="flex items-center justify-center gap-3">
-          <button
+          <Button
+            variant="outline"
             onclick={() => window.location.reload()}
-            class="px-6 py-3 rounded-lg border text-slate-700 hover:bg-slate-50 transition"
           >
             Crear otro ticket
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="default"
             onclick={descargar}
-            class="px-6 py-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition"
           >
             Descargar PDF
-          </button>
-        </div>
+          </Button>
+         </div>
       </div>
     {/key}
   {/if}

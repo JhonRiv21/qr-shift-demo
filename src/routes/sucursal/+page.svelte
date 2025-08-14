@@ -15,6 +15,7 @@
   let pending = $state<any[]>([]);
   let servicios_ticket = $state<any[]>([]);
   let authState = $state({ user: null, loading: true });
+  let pendientesPorSucursal = $state<Record<string, number>>({});
   const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 
   // Suscribirse al estado de autenticación
@@ -24,6 +25,21 @@
     });
     return unsubscribe;
   });
+
+  async function cargarPendientesTodasSucursales() {
+    const { data: pendientes } = await supabase
+      .from('turnos_tickets')
+      .select('sucursal_id')
+      .eq('estado', 'pendiente');
+
+    if (pendientes) {
+      const conteo: Record<string, number> = {};
+      data.sucursales.forEach(sucursal => {
+        conteo[sucursal.id] = pendientes.filter(p => p.sucursal_id === sucursal.id).length;
+      });
+      pendientesPorSucursal = conteo;
+    }
+  }
 
   async function cargarDatosSucursal() {
     if (!sucursal_seleccionada) return;
@@ -112,6 +128,29 @@
     }
   }
 
+  // Cargar pendientes inicialmente y suscripción global
+  let globalChannel: any;
+  $effect(() => {
+    cargarPendientesTodasSucursales();
+    
+    // Suscripción global para actualizar conteos
+    globalChannel = supabase
+      .channel('global-pendientes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'turnos_tickets' },
+        () => {
+          cargarPendientesTodasSucursales();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      if (globalChannel) {
+        supabase.removeChannel(globalChannel);
+      }
+    };
+  });
+
   // Suscripción Realtime
   let channel: any;
   $effect(() => {
@@ -151,6 +190,9 @@
     if (channel) {
       supabase.removeChannel(channel);
     }
+    if (globalChannel) {
+      supabase.removeChannel(globalChannel);
+    }
   });
 
   async function handleLogout() {
@@ -179,7 +221,7 @@
 
 <div class="mx-auto max-w-6xl p-6 space-y-6">
   <!-- Header con logout -->
-  <div class="flex items-center justify-between">
+  <div class="flex flex-row flex-wrap gap-4 items-center justify-between">
     <div>
       <h1 class="text-3xl font-bold text-foreground">Panel de Gestión</h1>
       <p class="text-muted-foreground mt-2">Gestionar tickets por sucursal</p>
@@ -191,7 +233,6 @@
       Cerrar sesión
     </Button>
   </div>
-
 
   <!-- Selección de Sucursal -->
   <Card>
@@ -211,7 +252,7 @@
                 : 'border-border hover:border-border/50'
             )}
           >
-            <div class="font-medium text-foreground">{sucursal.nombre} ({pending.length})</div>
+            <div class="font-medium text-foreground">{sucursal.nombre} ({pendientesPorSucursal[sucursal.id] || 0})</div>
             <div class="text-sm text-muted-foreground">({sucursal.codigo})</div>
             {#if sucursal_seleccionada === sucursal.id}
               <div class="mt-2 text-xs text-primary font-medium">✓ Seleccionada</div>
@@ -245,7 +286,7 @@
               <h3 class="font-semibold mb-3 text-foreground">Servicios</h3>
               <div class="grid gap-3">
                 {#each servicios_ticket as servicio}
-                  <div class="flex items-center justify-between p-4 rounded-lg border">
+                  <div class="flex flex-row flex-wrap gap-2 items-center justify-between p-4 rounded-lg border">
                     <div>
                       <div class="font-medium text-foreground">{servicio.turnos_servicios.nombre}</div>
                       {#if servicio.turnos_servicios.descripcion}
@@ -287,12 +328,12 @@
     </Card>
 
     <!-- Controles -->
-    <div class="flex gap-3 justify-center">
+    <div class="flex gap-6 flex-wrap flex-row justify-center">
       <Button
         onclick={llamarSiguiente}
-        disabled={pending.length === 0}
+        disabled={(pendientesPorSucursal[sucursal_seleccionada] || 0) === 0}
         variant="default"
-        class="bg-green-600 hover:bg-green-700"
+        class="bg-green-600 hover:bg-green-700 h-11"
       >
         <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
@@ -303,6 +344,7 @@
         onclick={finalizarActual}
         disabled={!current}
         variant="destructive"
+        class="h-11"
       >
         <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -321,12 +363,14 @@
         {#if pending.length > 0}
           <div class="space-y-3">
             {#each pending as ticket}
-              <div class="flex items-center justify-between p-4 rounded-lg border">
+              <div class="flex flex-row flex-wrap gap-2 items-center justify-between p-4 rounded-lg border">
                 <div>
                   <div class="font-mono text-lg text-foreground">{ticket.turno}</div>
                   <div class="text-sm text-muted-foreground">
                     {new Date(ticket.fecha).toLocaleTimeString()}
-                    {#if ticket.nombre_cliente} • {ticket.nombre_cliente}{/if}
+                    <span class="capitalize">
+                      {#if ticket.nombre_cliente} • {ticket.nombre_cliente}{/if}
+                    </span>
                   </div>
                 </div>
                 <div class="text-sm text-muted-foreground">
