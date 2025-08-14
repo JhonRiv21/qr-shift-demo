@@ -61,7 +61,7 @@ export const actions: Actions = {
       if (!validation.success) {
         console.error('Errores de validación:', validation.errors);
         return fail(400, { 
-          message: 'Datos inválidos', 
+          message: 'Por favor corrige los errores en el formulario', 
           errors: validation.errors 
         });
       }
@@ -83,7 +83,6 @@ export const actions: Actions = {
         return fail(500, { message: error.message });
       }
 
-      console.log('Ticket creado exitosamente:', data);
       return { ticket: data };
     } catch (error) {
       console.error('Error en acción crear:', error);

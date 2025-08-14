@@ -132,18 +132,21 @@
 
   {#if !form?.ticket}
     <form method="post" action="?/crear" use:enhance={() => {
-      return async ({ result }) => {
+      return async ({ result, update }) => {
         loading = false;
         if (result.type === 'failure') {
-          toast.error('Error al crear el ticket');
+          const message = (result.data as any)?.message || 'Error al crear el ticket';
+          toast.error(message);
+        } else if (result.type === 'success') {
+          await update();
         }
       };
     }} class="space-y-6" onsubmit={(e) => {
       e.preventDefault();
-      if (validateFormData()) {
-        loading = true;
-        (e.target as HTMLFormElement).submit();
+      if (!validateFormData()) {
+        return;
       }
+      loading = true;
     }}>
       <!-- Selección de Sucursal -->
       <div class="rounded-xl border bg-white p-6 shadow-sm">
